@@ -14,5 +14,7 @@ add_executable(focus_timer
 	Timer.cpp
 	${MY_INCLUDE_DIR}/UI.h 
 	UI.cpp 
+	${MY_INCLUDE_DIR}/Utility.h 
+	Utility.cpp 
 )
 target_include_directories(focus_timer PUBLIC ${MY_INCLUDE_DIR})

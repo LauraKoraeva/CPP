@@ -157,7 +157,8 @@ void Statistics::printStatistics(const std::string& fileName) //const
         std::setw(25) << "Task" <<
         std::setw(25) << "Duration" <<
         std::setw(25) << "Start Time" << 
-        std::setw(25) << "End Time\n";
+        std::setw(25) << "End Time";
+    std::cout << std::endl;
 
     for (const auto& session : sessions)
     {
@@ -166,11 +167,11 @@ void Statistics::printStatistics(const std::string& fileName) //const
 
         std::tm* startTimeInfo = std::localtime(&start_time_t);
         char startBuffer[80];
-        std::strftime(startBuffer, sizeof(startBuffer), "%d-%m-%Y %H:%M:%S", startTimeInfo);
+        std::strftime(startBuffer, sizeof(startBuffer), "%d-%m-%Y %H:%M", startTimeInfo);
 
         std::tm* endTimeInfo = std::localtime(&end_time_t);
         char endBuffer[80];
-        std::strftime(endBuffer, sizeof(endBuffer), "%d-%m-%Y %H:%M:%S", endTimeInfo);
+        std::strftime(endBuffer, sizeof(endBuffer), "%d-%m-%Y %H:%M", endTimeInfo);
         std::cout << std::setw(25) << session.taskDescription <<
             std::setw(25) << session.durationMinutes <<
             std::setw(25) << startBuffer <<

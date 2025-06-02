@@ -1,11 +1,12 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
 #include "UI.h"
 #include "Session.h"
-// #include "Config.h"
+#include "Config.h"
+#include "Utility.h"
 
 UI::UI(Timer& inTimer, Statistics& inStatistics) : timer(inTimer), statistics(inStatistics) { }
-
 
 
 void UI::displayMenu() 
@@ -21,8 +22,6 @@ void UI::displayMenu()
 }
 
 
-
-
 void UI::startFocusSession()
 {
     if (timer.is_Running())
@@ -31,27 +30,20 @@ void UI::startFocusSession()
         return;
     }
 
-
-    std::string taskDescription;
-    int sessionDuration;
+    Session currentSession;
 
     std::cout << "Description: ";
     std::cin.ignore();
-    std::getline(std::cin, taskDescription);
+    std::getline(std::cin, currentSession.taskDescription);
 
     std::cout << "Focus time: ";
-    std::cin >> sessionDuration; // проверка
-
-    Session currentSession(taskDescription, sessionDuration);
+    std::cin >> currentSession.durationMinutes; 
 
     timer.start(currentSession, [this, currentSession](Session& s) 
 {
     statistics.recordSession(s, "Focus_Statistics.txt");
 }); 
 }
-
-
-
 
 
 void UI::pauseFocusSession()
@@ -71,14 +63,10 @@ void UI::stopFocusSession()
 }
 
 
-
 void UI::showStatistics()
 {
-    statistics.printStatistics("Focus_Statistics.txt");
+    statistics.printStatistics(Config::getStatisticsFileName());
 }
-
-
-
 
 
 void UI::run()
@@ -87,11 +75,11 @@ void UI::run()
     do
     {
         displayMenu();
-        std::cout << "Choose the operation: ";
-        std::cin >> operation; // проверка
-
-
-
+        do
+        {
+            std::cout << "Choose the operation: ";
+            std::cin >> operation; 
+        } while (!correctInput(operation));
 
         switch (operation) 
         {
@@ -118,13 +106,6 @@ void UI::run()
             std::cout << "Incorrect input." << std::endl;
         }
     } while (operation != 6);
-
-    
-
-
-
-
-
 }
 
 
