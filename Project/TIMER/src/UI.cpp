@@ -32,13 +32,20 @@ void UI::startFocusSession()
 
     Session currentSession;
 
+    std::string description;
     std::cout << "Description: ";
     std::cin.ignore();
-    std::getline(std::cin, currentSession.taskDescription);
+    std::getline(std::cin, description);
+    currentSession.setTaskDescription(description);
 
+    int duration;
     std::cout << "Focus time: ";
-    std::cin >> currentSession.durationMinutes; 
-
+    do
+    {
+    std::cin >> duration; 
+    } while (!correctInput(duration));
+    currentSession.setDurationMinutes(duration);
+    
     timer.start(currentSession, [this, currentSession](Session& s) 
 {
     statistics.recordSession(s, "Focus_Statistics.txt");

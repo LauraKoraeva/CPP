@@ -35,9 +35,9 @@ void Statistics::recordSession(Session inSession, const std::string& fileName) /
 
     if (outFile.is_open())
     {
-        std::string startTime = formatTimePoint(inSession.sessionStartTime);
-        std::string finishTime = formatTimePoint(inSession.sessionFinishTime);
-        outFile << inSession.taskDescription << "," << inSession.durationMinutes << "," << startTime << "," << finishTime << std::endl;
+        std::string startTime = formatTimePoint(inSession.getSessionStartTime());
+        std::string finishTime = formatTimePoint(inSession.getSessionEndTime());
+        outFile << inSession.getTaskDescription() << "," << inSession.getDurationMinutes() << "," << startTime << "," << finishTime << std::endl;
         outFile.close();
         std::cout << "Session is recorded and saved to the file " << std::quoted(fileName) << '\n';
     }
@@ -64,9 +64,9 @@ void Statistics::saveStatisticsToFile(const std::string& fileName) const
     {
         for (const auto& session : sessions)
         {
-            std::string startTime = formatTimePoint(session.sessionStartTime);
-            std::string finishTime = formatTimePoint(session.sessionFinishTime);
-            outFile << session.taskDescription << "," << session.durationMinutes << "," << startTime << "," << finishTime << std::endl;
+            std::string startTime = formatTimePoint(session.getSessionStartTime());
+            std::string finishTime = formatTimePoint(session.getSessionEndTime());
+            outFile << session.getTaskDescription() << "," << session.getDurationMinutes() << "," << startTime << "," << finishTime << std::endl;
         }
         outFile.close();
         std::cout << "Statistics are saved to the file " << std::quoted(fileName) << '\n';
@@ -162,8 +162,8 @@ void Statistics::printStatistics(const std::string& fileName) //const
 
     for (const auto& session : sessions)
     {
-        std::time_t start_time_t = std::chrono::system_clock::to_time_t(session.sessionStartTime);
-        std::time_t end_time_t = std::chrono::system_clock::to_time_t(session.sessionFinishTime);
+        std::time_t start_time_t = std::chrono::system_clock::to_time_t(session.getSessionStartTime());
+        std::time_t end_time_t = std::chrono::system_clock::to_time_t(session.getSessionEndTime());
 
         std::tm* startTimeInfo = std::localtime(&start_time_t);
         char startBuffer[80];
@@ -172,8 +172,8 @@ void Statistics::printStatistics(const std::string& fileName) //const
         std::tm* endTimeInfo = std::localtime(&end_time_t);
         char endBuffer[80];
         std::strftime(endBuffer, sizeof(endBuffer), "%d-%m-%Y %H:%M", endTimeInfo);
-        std::cout << std::setw(25) << session.taskDescription <<
-            std::setw(25) << session.durationMinutes <<
+        std::cout << std::setw(25) << session.getTaskDescription() <<
+            std::setw(25) << session.getDurationMinutes() <<
             std::setw(25) << startBuffer <<
             std::setw(25) << endBuffer << std::endl;
             

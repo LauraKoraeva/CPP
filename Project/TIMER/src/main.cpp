@@ -9,7 +9,7 @@ int main()
     Statistics statistics;
 
     statistics.loadStatisticsFromFile("Focus_Statistics.txt");
-    // statistics.printStatistics("Focus_Statistics.txt");
+    
 
     
 
