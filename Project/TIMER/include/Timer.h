@@ -10,9 +10,6 @@
 
 class Timer
 {
-	std::chrono::time_point<std::chrono::system_clock> startTime;
-	std::chrono::time_point<std::chrono::system_clock> finishTime; 
-
     std::atomic<bool> isRunning;
     std::atomic<bool> isPaused;
 

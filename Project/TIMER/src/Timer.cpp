@@ -8,6 +8,7 @@ Timer::Timer() : durationSeconds(0), elapsedSeconds(0), isRunning(false), isPaus
 
 void Timer::run()
 {
+	session.setSessionStartTime(std::chrono::system_clock::now());
 	while (isRunning && elapsedSeconds < durationSeconds)
 	{
 		if (isPaused)
@@ -18,14 +19,13 @@ void Timer::run()
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		++elapsedSeconds;
 	}
+
 	if (elapsedSeconds >= durationSeconds)
 	{
-		finishTime = std::chrono::system_clock::now();
-		session.setSessionEndTime(finishTime);
+		session.setSessionEndTime(std::chrono::system_clock::now());
 		stop();
 	}
 }
-
 
 
 void Timer::start(Session& inSession, std::function<void(Session& s)> inCallback)
@@ -35,18 +35,15 @@ void Timer::start(Session& inSession, std::function<void(Session& s)> inCallback
 		std::cout << "Timer is already running.\n";
 		return;		
 	}
+
 	durationSeconds = inSession.getDurationMinutes() * 60;
 	session = inSession;
 	isRunning = true;
-	isPaused = false;
 	callback = inCallback;
-	startTime = std::chrono::system_clock::now();
-	session.setSessionStartTime(startTime);
     std::cout << "Running\n";
 	timerThread = std::thread([this]() { run(); }); 
-	timerThread.detach(); // ///////////////////////
+	timerThread.detach(); 
 }
-
 
 
 void Timer::pause()
@@ -61,7 +58,6 @@ void Timer::pause()
 }
 
 
-
 void Timer::resume()
 {
 	if (isPaused)
@@ -74,17 +70,13 @@ void Timer::resume()
 }
 
 
-
 void Timer::stop()
 {
 	if (isRunning || isPaused)
 	{
 		isRunning = false;
-		
-	
 		session.setDurationMinutes(elapsedSeconds / 60);
 		std::cout << "Stopped\n";
-		//timerThread.join();
 		callback(session);
 	}
 }
