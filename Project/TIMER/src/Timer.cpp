@@ -22,7 +22,7 @@ void Timer::run()
 
 	if (elapsedSeconds >= durationSeconds)
 	{
-		session.setSessionEndTime(std::chrono::system_clock::now());
+		// session.setSessionEndTime(std::chrono::system_clock::now());   // ПЕРЕНЕСТИ В STOP
 		stop();
 	}
 }
@@ -40,7 +40,16 @@ void Timer::start(Session& inSession, std::function<void(Session& s)> inCallback
 	session = inSession;
 	isRunning = true;
 	callback = inCallback;
-    std::cout << "Running\n";
+
+
+
+	std::cout << "\n=======================\n";
+    std::cout << "Focus session STARTED\n";
+	std::cout << "=======================\n\n";
+
+
+
+
 	timerThread = std::thread([this]() { run(); }); 
 	timerThread.detach(); 
 }
@@ -51,7 +60,15 @@ void Timer::pause()
 	if (isRunning && !isPaused)
 	{
 		std::unique_lock<std::mutex> lock(mutex);
-		std::cout << "Paused\n";
+
+
+
+		std::cout << "\n=======================\n";
+		std::cout << "Focus session PAUSED\n";
+		std::cout << "=======================\n\n";
+
+
+
 		isPaused = true;
 		cv.notify_one();
 	}
@@ -63,7 +80,14 @@ void Timer::resume()
 	if (isPaused)
 	{
 		std::unique_lock<std::mutex> lock(mutex);
-		std::cout << "Resumed\n";
+
+
+		std::cout << "\n=======================\n";
+		std::cout << "Focus session RESUMED\n";
+		std::cout << "=======================\n\n";
+
+
+
 		isPaused = false;
 		cv.notify_one();
 	}
@@ -74,9 +98,20 @@ void Timer::stop()
 {
 	if (isRunning || isPaused)
 	{
+		session.setSessionEndTime(std::chrono::system_clock::now()); // ДОБАВИТЬ
 		isRunning = false;
 		session.setDurationMinutes(elapsedSeconds / 60);
-		std::cout << "Stopped\n";
+
+		
+
+
+		std::cout << "\n=======================\n";
+		std::cout << "Focus session STOPPED\n";
+		std::cout << "=======================\n\n";
+		
+		
+		
+		
 		callback(session);
 	}
 }

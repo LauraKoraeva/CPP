@@ -8,7 +8,7 @@ int main()
     Timer timer;
     Statistics statistics;
 
-    statistics.loadStatisticsFromFile("Focus_Statistics.txt");
+    statistics.loadStatisticsFromFile("Focus_Statistics.txt"); /////////////////// ?????????????????????
     
 
     

@@ -2,30 +2,41 @@
 #include <iomanip>
 #include <chrono>
 #include <fstream>
+#include <sstream>                
+#include <stdexcept>              
+#include <string>                 
+#include <vector>                 
+#include <optional>               
 #include "Statistics.h"
 #include "Session.h"
 
 
-std::string Statistics::formatTimePoint(const std::chrono::system_clock::time_point& timePoint, const std::string& format = "%d-%m-%Y %H:%M:%S") const
+std::string Statistics::formatTimePoint(const std::chrono::system_clock::time_point& timePoint, const char* format = "%d-%m-%Y %H:%M:%S") const  
 {
 	auto time = std::chrono::system_clock::to_time_t(timePoint);
 	std::tm buffer;
+
 #ifdef _WIN32
-	localtime_s(&buffer, &time); 
+    errno_t err = localtime_s(&buffer, &time);  
+    if (err != 0)                              
+    {
+        throw std::runtime_error("localtime_s failed with error code: " + std::to_string(err)); 
+    }
 #else
-	localtime_r(&time, &buffer); 
+    if (localtime_r(&time, &buffer) == nullptr)  
+    {
+        throw std::runtime_error("localtime_r failed"); 
+    }
 #endif
 
 	std::stringstream ss;
-	ss << std::put_time(&buffer, format.c_str());
+	ss << std::put_time(&buffer, format); 
 	return ss.str();
 }
 
 
 
-
-
-void Statistics::recordSession(Session inSession, const std::string& fileName) // /////////////////////
+void Statistics::recordSession(Session inSession, const std::string& fileName) 
 {
     sessions.push_back(inSession);
 
@@ -36,8 +47,8 @@ void Statistics::recordSession(Session inSession, const std::string& fileName) /
     if (outFile.is_open())
     {
         std::string startTime = formatTimePoint(inSession.getSessionStartTime());
-        std::string finishTime = formatTimePoint(inSession.getSessionEndTime());
-        outFile << inSession.getTaskDescription() << "," << inSession.getDurationMinutes() << "," << startTime << "," << finishTime << std::endl;
+        std::string endTime = formatTimePoint(inSession.getSessionEndTime());
+        outFile << inSession.getTaskDescription() << "," << inSession.getDurationMinutes() << "," << startTime << "," << endTime << std::endl;
         outFile.close();
         std::cout << "Session is recorded and saved to the file " << std::quoted(fileName) << '\n';
     }
@@ -48,11 +59,6 @@ void Statistics::recordSession(Session inSession, const std::string& fileName) /
 
 
 }
-
-
-
-
-
 
 
 
@@ -79,73 +85,96 @@ void Statistics::saveStatisticsToFile(const std::string& fileName) const
 
 
 
-time_t Statistics::stringToTimeT(const std::string& timeString, const std::string& format = "%d-%m-%Y %H:%M:%S") const
+std::chrono::system_clock::time_point Statistics::stringToTimePoint(const std::string& timeString, const char* format = "%d-%m-%Y %H:%M:%S") const 
 {
-	std::tm t{};
-	std::istringstream ss(timeString);
-	ss >> std::get_time(&t, format.c_str());
+  std::tm t{};
+  std::istringstream ss(timeString);
+  ss >> std::get_time(&t, format);
 
-	if (ss.fail())
-	{
-		std::cerr << "Error converting string to time_t\n";
-		return 1;
-	}
+  if (ss.fail()) 
+  {
+    throw std::runtime_error("Error converting string to time_point: Invalid format");
+  }
 
-	return mktime(&t);
+  std::time_t time = mktime(&t);  
+
+  if (time == -1) 
+  {
+    throw std::runtime_error("Error converting string to time_point: mktime failed");
+  }
+
+  return std::chrono::system_clock::from_time_t(time);
 }
 
 
-void Statistics::loadStatisticsFromFile(const std::string& fileName)
+
+std::optional<std::tuple<std::string, int, std::chrono::system_clock::time_point, std::chrono::system_clock::time_point>> 
+Statistics::parseSessionLine(const std::string& line, const char* format = "%d-%m-%Y %H:%M:%S") 
+{
+    std::stringstream ss(line);
+
+    std::string description;
+    int duration = 0; 
+    std::string startTimeString;
+    std::string endTimeString;
+
+    if (!std::getline(ss, description, ',')) return std::nullopt; 
+    if (!(ss >> duration)) return std::nullopt;                      
+    ss.ignore(1); 
+    if (!std::getline(ss, startTimeString, ',')) return std::nullopt;
+    if (!std::getline(ss, endTimeString, ',')) return std::nullopt;
+
+    try 
+    {
+        std::chrono::system_clock::time_point start = stringToTimePoint(startTimeString, format);
+        std::chrono::system_clock::time_point end = stringToTimePoint(endTimeString, format);
+
+        if (duration <= 0) 
+        { 
+            std::cerr << "Invalid duration in line: " << line << std::endl;
+            return std::nullopt; 
+        }
+
+        return std::make_tuple(description, duration, start, end);
+
+    } 
+    catch (const std::runtime_error& e) 
+    {
+        std::cerr << "Error parsing time in line: " << line << " - " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}
+
+
+
+void Statistics::loadStatisticsFromFile(const std::string& fileName) 
 {
     std::ifstream inFile(fileName);
 
-    if (inFile.is_open())
+    if (!inFile.is_open()) 
     {
-        std::string line;
+        std::cerr << "Couldn't open file: " << fileName << std::endl;
+        return;
+    }
 
-        while(std::getline(inFile, line))
+    std::string line;
+    while (std::getline(inFile, line)) 
+    {
+        auto sessionData = parseSessionLine(line); 
+
+        if (sessionData) 
         {
-            std::stringstream ss(line);
-
-            std::string description;
-            int duration;
-            std::string startTimeString;
-            std::string endTimeString;
-
-            std::getline(ss, description, ',');
-            ss >> duration;
-            ss.ignore(1);
-            std::getline(ss, startTimeString, ',');
-            std::getline(ss, endTimeString, ',');
-
-
-
-            
-            std::time_t start_time_t = stringToTimeT(startTimeString);
-            std::time_t end_time_t = stringToTimeT(endTimeString);
-
-
-            std::chrono::system_clock::time_point start = std::chrono::system_clock::from_time_t(start_time_t);
-            std::chrono::system_clock::time_point end = std::chrono::system_clock::from_time_t(end_time_t);
-
+            const auto& [description, duration, start, end] = *sessionData;  
             sessions.push_back({description, duration, start, end});
-
-            
         }
     }
-    else
-    {
-        std::cout << "Couldn't open the file.\n";
-    }
 }
-
-
 
 
 
 void Statistics::printStatistics(const std::string& fileName) //const
 {
-    // loadStatisticsFromFile(fileName);
+    // loadStatisticsFromFile(fileName);            
     if (sessions.empty())
     {
         std::cout << "Statistics are empty.\n";

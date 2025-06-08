@@ -11,14 +11,16 @@ UI::UI(Timer& inTimer, Statistics& inStatistics) : timer(inTimer), statistics(in
 
 void UI::displayMenu() 
 {
-    std::cout << "======Focus=Timer======\n";
+    std::cout << "-----------------------\n";
+    std::cout << "    Focus Timer MENU   \n";
+    std::cout << "-----------------------\n";
     std::cout << "1. Start focus session\n";
     std::cout << "2. Pause focus session\n"; 
     std::cout << "3. Resume focus session\n";   
     std::cout << "4. Stop focus session\n";   
     std::cout << "5. Show statistics\n";  
     std::cout << "6. Exit\n";     
-    std::cout << "=======================\n";
+    std::cout << "-----------------------\n";
 }
 
 
