@@ -17,8 +17,8 @@ class Timer
 	int elapsedSeconds;
 
     std::thread timerThread;
-	std::mutex mutex;
-	std::condition_variable cv;
+	std::mutex timerMutex;
+	std::condition_variable timerCV;
 
 	std::function<void(Session& s)> callback;
 	Session session;

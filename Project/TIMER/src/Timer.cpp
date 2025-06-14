@@ -9,22 +9,23 @@ Timer::Timer() : durationSeconds(0), elapsedSeconds(0), isRunning(false), isPaus
 void Timer::run()
 {
 	session.setSessionStartTime(std::chrono::system_clock::now());
+
 	while (isRunning && elapsedSeconds < durationSeconds)
 	{
 		if (isPaused)
 		{
-			std::unique_lock<std::mutex> lock(mutex);
-			cv.wait(lock, [&] { return isPaused == false; });
+			std::unique_lock<std::mutex> lock(timerMutex);
+			timerCV.wait(lock, [&] { return isPaused == false; });
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		++elapsedSeconds;
 	}
-
-	if (elapsedSeconds >= durationSeconds)
+	if (elapsedSeconds >= durationSeconds)   
 	{
-		// session.setSessionEndTime(std::chrono::system_clock::now());   // ПЕРЕНЕСТИ В STOP
 		stop();
 	}
+
+	
 }
 
 
@@ -59,7 +60,7 @@ void Timer::pause()
 {
 	if (isRunning && !isPaused)
 	{
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(timerMutex);
 
 
 
@@ -70,7 +71,7 @@ void Timer::pause()
 
 
 		isPaused = true;
-		cv.notify_one();
+		timerCV.notify_one();
 	}
 }
 
@@ -79,7 +80,7 @@ void Timer::resume()
 {
 	if (isPaused)
 	{
-		std::unique_lock<std::mutex> lock(mutex);
+		std::unique_lock<std::mutex> lock(timerMutex);
 
 
 		std::cout << "\n=======================\n";
@@ -89,7 +90,7 @@ void Timer::resume()
 
 
 		isPaused = false;
-		cv.notify_one();
+		timerCV.notify_one();
 	}
 }
 
@@ -98,7 +99,7 @@ void Timer::stop()
 {
 	if (isRunning || isPaused)
 	{
-		session.setSessionEndTime(std::chrono::system_clock::now()); // ДОБАВИТЬ
+		session.setSessionEndTime(std::chrono::system_clock::now()); 
 		isRunning = false;
 		session.setDurationMinutes(elapsedSeconds / 60);
 

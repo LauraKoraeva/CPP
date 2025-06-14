@@ -38,9 +38,9 @@ std::string Statistics::formatTimePoint(const std::chrono::system_clock::time_po
 
 void Statistics::recordSession(Session inSession, const std::string& fileName) 
 {
+    std::unique_lock<std::mutex> lock(sessionsMutex);                 
     sessions.push_back(inSession);
-
-
+    
     std::ofstream outFile;
     outFile.open(fileName, std::ios::app);
 
@@ -62,12 +62,13 @@ void Statistics::recordSession(Session inSession, const std::string& fileName)
 
 
 
-void Statistics::saveStatisticsToFile(const std::string& fileName) const
+void Statistics::saveStatisticsToFile(const std::string& fileName) 
 {
     std::ofstream outFile(fileName);
 
     if (outFile.is_open())
     {
+        std::unique_lock<std::mutex> lock(sessionsMutex);                 
         for (const auto& session : sessions)
         {
             std::string startTime = formatTimePoint(session.getSessionStartTime());
@@ -149,9 +150,9 @@ Statistics::parseSessionLine(const std::string& line, const char* format = "%d-%
 
 void Statistics::loadStatisticsFromFile(const std::string& fileName) 
 {
-    std::ifstream inFile(fileName);
+    std::ifstream inFile(fileName);                                          
 
-    if (!inFile.is_open()) 
+    if (!inFile.is_open())                                                  
     {
         std::cerr << "Couldn't open file: " << fileName << std::endl;
         return;
@@ -165,16 +166,17 @@ void Statistics::loadStatisticsFromFile(const std::string& fileName)
         if (sessionData) 
         {
             const auto& [description, duration, start, end] = *sessionData;  
-            sessions.push_back({description, duration, start, end});
+            std::unique_lock<std::mutex> lock(sessionsMutex);                        
+            sessions.push_back({description, duration, start, end});                    
         }
     }
 }
 
 
 
-void Statistics::printStatistics(const std::string& fileName) //const
+void Statistics::printStatistics(const std::string& fileName) 
 {
-    // loadStatisticsFromFile(fileName);            
+    std::unique_lock<std::mutex> lock(sessionsMutex);                       
     if (sessions.empty())
     {
         std::cout << "Statistics are empty.\n";
@@ -182,35 +184,24 @@ void Statistics::printStatistics(const std::string& fileName) //const
     }
 
     std::cout << "=====Statistics=====\n";
-    std::cout << std::left << 
-        std::setw(25) << "Task" <<
-        std::setw(25) << "Duration" <<
-        std::setw(25) << "Start Time" << 
-        std::setw(25) << "End Time";
+    std::cout << std::left
+        << std::setw(25) << "Task"
+        << std::setw(25) << "Duration"
+        << std::setw(25) << "Start Time"
+        << std::setw(25) << "End Time";
     std::cout << std::endl;
 
     for (const auto& session : sessions)
     {
-        std::time_t start_time_t = std::chrono::system_clock::to_time_t(session.getSessionStartTime());
-        std::time_t end_time_t = std::chrono::system_clock::to_time_t(session.getSessionEndTime());
+        std::string startTimeStr = formatTimePoint(session.getSessionStartTime());
+        std::string endTimeStr = formatTimePoint(session.getSessionEndTime());
 
-        std::tm* startTimeInfo = std::localtime(&start_time_t);
-        char startBuffer[80];
-        std::strftime(startBuffer, sizeof(startBuffer), "%d-%m-%Y %H:%M", startTimeInfo);
-
-        std::tm* endTimeInfo = std::localtime(&end_time_t);
-        char endBuffer[80];
-        std::strftime(endBuffer, sizeof(endBuffer), "%d-%m-%Y %H:%M", endTimeInfo);
-        std::cout << std::setw(25) << session.getTaskDescription() <<
-            std::setw(25) << session.getDurationMinutes() <<
-            std::setw(25) << startBuffer <<
-            std::setw(25) << endBuffer << std::endl;
-            
+        std::cout << std::setw(25) << session.getTaskDescription()
+            << std::setw(25) << session.getDurationMinutes()
+            << std::setw(25) << startTimeStr
+            << std::setw(25) << endTimeStr << std::endl;
     }
 }
-
-
-
 
 
 
